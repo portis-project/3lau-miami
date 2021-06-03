@@ -1,11 +1,16 @@
 import './style.css';
 import Head from 'next/head';
-import { FC, useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/router';
+import {FC, useEffect, useState, useRef} from 'react';
+import {useRouter} from 'next/router';
 import Portis from '@portis/web3';
 import cx from 'classnames'
 
-const ERROR_MESSAGES = {
+const ERROR_MESSAGES: {
+    [index: string]: {
+        mainMessage: string,
+        secondaryMessage?: string
+    }
+} = {
     VOUCHER_ID_REQUIRED: {
         mainMessage: 'Scan a QR code to claim!',
         secondaryMessage: 'Be one of the first 99 people to scan one of the QR codes around you to claim your NFT!',
@@ -63,10 +68,14 @@ const onResize = () => {
 const useOnResize = () => {
     onResize()
     window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('resize', onResize); };
+    return () => {
+        window.removeEventListener('resize', onResize);
+    };
 }
 
-const onCreateWalletClick = () => { window.open('https://wallet.portis.io/register', '_blank') }
+const onCreateWalletClick = () => {
+    window.open('https://wallet.portis.io/register', '_blank')
+}
 
 interface INoticeViewProps {
     isSuccess?: boolean,
@@ -74,7 +83,7 @@ interface INoticeViewProps {
     secondaryMessage?: string,
 }
 
-const NoticeView: FC<INoticeViewProps> = ({ isSuccess, mainMessage, secondaryMessage }) => {
+const NoticeView: FC<INoticeViewProps> = ({isSuccess, mainMessage, secondaryMessage}) => {
     const mainMessageClass = cx(['promo-text', 'font-black', isSuccess ? 'success-text' : 'error-text'])
     const secondaryMessageElement = secondaryMessage
         ? <p className="promo-text">{secondaryMessage}</p>
@@ -93,16 +102,16 @@ const SuccessView = () => <NoticeView
 />
 
 const BlauPage = () => {
-    const [claimError, setClaimError] = useState<string>(null);
+    const [claimError, setClaimError] = useState<string>("");
     const [campaignStartTime, setCampaignStartTime] = useState<number | null>(null);
     const [campaignEndTime, setCampaignEndTime] = useState<number | null>(null);
     const [promoView, setPromoView] = useState<PROMO_VIEWS>(PROMO_VIEWS.LOADING_CAMPAIGN);
     const [isClaimPending, setIsClaimPending] = useState<boolean>(false);
-    const { query: { campaignId, voucherId } } = useRouter();
+    const {query: {campaignId, voucherId}} = useRouter();
 
     useEffect(() => {
         if (campaignId) {
-            portis.getCampaignInfo(Array.isArray(campaignId) ? campaignId[0] : campaignId).then(({ result }) => {
+            portis.getCampaignInfo(Array.isArray(campaignId) ? campaignId[0] : campaignId).then(({result}) => {
                 setCampaignStartTime(+new Date((result as any).campaignDateStart));
                 setCampaignEndTime(+new Date((result as any).campaignDateEnd));
             });
@@ -111,7 +120,7 @@ const BlauPage = () => {
 
     const claimVoucher = async () => {
         setIsClaimPending(true);
-        const { error } = await portis.claimVoucher(Array.isArray(voucherId) ? voucherId[0] : voucherId);
+        const {error} = await portis.claimVoucher(Array.isArray(voucherId) ? voucherId[0] : voucherId);
         if (error) {
             setClaimError(typeof error === 'string' ? error : (error as any).code);
         } else {
@@ -136,11 +145,11 @@ const BlauPage = () => {
             return <NoticeView {...ERROR_MESSAGES[claimError]} />
         }
         if (promoView === PROMO_VIEWS.SUCCESS) {
-            return <SuccessView />
+            return <SuccessView/>
         }
         if (promoView === PROMO_VIEWS.ONGOING) {
             const claimButton = isClaimPending
-                ? <div className="blau-spinner" />
+                ? <div className="blau-spinner"/>
                 : (
                     <button onClick={claimVoucher} className="blau-button">
                         Claim Now
@@ -181,27 +190,29 @@ const BlauPage = () => {
                     </a>
                 </div>
             );
-        };
+        }
+        ;
 
-        return <div className="blau-spinner" />
+        return <div className="blau-spinner"/>
     }
 
 
     return (
         <>
             <Head>
-                <link rel="icon" href="/static/favicon.ico" />
+                <link rel="icon" href="/static/favicon.ico"/>
                 <title>Portis × 3LAU</title>
-                <link rel="preconnect" href="https://fonts.gstatic.com" />
-                <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;500&display=swap" rel="stylesheet" />
+                <link rel="preconnect" href="https://fonts.gstatic.com"/>
+                <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;500&display=swap"
+                      rel="stylesheet"/>
             </Head>
             <div className="blau-wrap">
                 <div className="blau-logo-wrap">
-                    <img className="blau-logo" src="/static/3lau-logo.png" alt="3LAU Logo" />
+                    <img className="blau-logo" src="/static/3lau-logo.png" alt="3LAU Logo"/>
                 </div>
                 <div className="content-strip">
                     <div className="strip-inner">
-                        <PromoView />
+                        <PromoView/>
                     </div>
                 </div>
             </div>
@@ -211,8 +222,9 @@ const BlauPage = () => {
 
 export default BlauPage;
 
-const useInterval = (callback, delay) => {
-    const savedCallback = useRef(() => {});
+const useInterval = (callback: any, delay: number) => {
+    const savedCallback = useRef(() => {
+    });
 
     // Remember the latest callback.
     useEffect(() => {
@@ -224,6 +236,7 @@ const useInterval = (callback, delay) => {
         function tick() {
             savedCallback.current();
         }
+
         if (delay !== null) {
             let id = setInterval(tick, delay);
             return () => clearInterval(id);
