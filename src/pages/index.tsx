@@ -90,7 +90,9 @@ const BlauPage = () => {
     const [campaignEndTime, setCampaignEndTime] = useState<number | null>(null);
     const [promoView, setPromoView] = useState<PROMO_VIEWS>(PROMO_VIEWS.LOADING_CAMPAIGN);
     const [isClaimPending, setIsClaimPending] = useState<boolean>(false);
-    const {query: {campaignId, voucherId}} = useRouter();
+    const [campaignId, setCampaignId] = useState<string>('')
+    const [voucherId, setVoucherId] = useState<string>('')
+    const { isReady } = useRouter();
 
     /**
      * Verifies that a valid campaign id has been supplied as a query parameter
@@ -112,17 +114,24 @@ const BlauPage = () => {
 
     /**
      * Verifies that valid voucher id and valid campaign id have been supplied as query parameters
+     * THIS ASSUMES A SINGLE, UNCHANGING URI FOR THE WHOLE FLOW
      * */
     useEffect(() => {
-        if (!voucherId) {
-            setClaimError("VOUCHER_ID_REQUIRED");
-        } else if (!campaignId) {
-            setClaimError("INVALID_VOUCHER_CAMPAIGN_ID");
+      if (isReady) {
+        const query = window.location.search.substr(1, Number.POSITIVE_INFINITY);
+        const paramTuples = query.split('&').map(param => param.split('=')) as Array<[string, string]>;
+        const paramMap = new Map<string, string>(paramTuples);
+        
+        if (!paramMap.has('campaignId')) {
+          setClaimError('INVALID_VOUCHER_CAMPAIGN_ID');
+        } else if (!paramMap.has('voucherId')) {
+          setClaimError('VOUCHER_ID_REQUIRED');
         } else {
-            setClaimError("");
+          setCampaignId(paramMap.get('campaignId')!);
+          setVoucherId(paramMap.get('voucherId')!);
         }
-    }, [voucherId, campaignId]);
-
+      }
+    }, [isReady]);
 
     /**
      *  Handler for users claiming a voucher on the ONGOING campaign view
