@@ -21,6 +21,10 @@ const ERROR_MESSAGES: ErrorMessages = {
         mainMessage: 'This ID does not exist in our system.',
         secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
     },
+    VOUCHER_DOES_NOT_EXIST: {
+        mainMessage: 'This ID does not exist in our system.',
+        secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
+    },
     VOUCHER_ALREADY_CLAIMED: {
         mainMessage: 'You have already claimed this NFT.',
         secondaryMessage: 'We will be distributing the NFT to your Portis Wallet in a couple of days.',
