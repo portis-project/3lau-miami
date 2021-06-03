@@ -100,21 +100,22 @@ const BlauPage = () => {
                 }
             });
             setClaimError("");
-        } else {
-            setClaimError("INVALID_VOUCHER_CAMPAIGN_ID");
         }
     }, [campaignId]);
 
     /**
-     * Verifies that a valid voucher id has been supplied as a query parameter
+     * Verifies that valid voucher id and valid campaign id have been supplied as query parameters
      * */
     useEffect(() => {
         if (!voucherId) {
             setClaimError("VOUCHER_ID_REQUIRED");
+        } else if (!campaignId) {
+            setClaimError("INVALID_VOUCHER_CAMPAIGN_ID");
         } else {
             setClaimError("");
         }
-    }, [voucherId]);
+    }, [voucherId, campaignId]);
+
 
     /**
      *  Handler for users claiming a voucher on the ONGOING campaign view
