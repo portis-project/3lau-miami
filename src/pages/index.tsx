@@ -37,6 +37,10 @@ const ERROR_MESSAGES: ErrorMessages = {
         mainMessage: 'This campaign does not exist in our system.',
         secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
     },
+    VOUCHER_CAMPAIGN_DOES_NOT_EXIST: {
+        mainMessage: 'This campaign does not exist in our system.',
+        secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
+    },
     DEFAULT: {
         mainMessage: 'Something went wrong, please try again.',
     },
