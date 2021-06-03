@@ -24,7 +24,7 @@
     "next": "^10.2.3"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -- --port 3009",
     "build": "next build",
     "start": "next start -p $PORT"
   },

@@ -5,15 +5,17 @@ import {useRouter} from 'next/router';
 import Portis from '@portis/web3';
 import cx from 'classnames'
 
-const ERROR_MESSAGES: {
+interface ErrorMessages {
     [index: string]: {
         mainMessage: string,
         secondaryMessage?: string
     }
-} = {
+}
+
+const ERROR_MESSAGES: ErrorMessages = {
     VOUCHER_ID_REQUIRED: {
-        mainMessage: 'Scan a QR code to claim!',
-        secondaryMessage: 'Be one of the first 99 people to scan one of the QR codes around you to claim your NFT!',
+        mainMessage: 'This ID does not exist in our system.',
+        secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
     },
     VOUCHER_ID_DOES_NOT_EXIST: {
         mainMessage: 'This ID does not exist in our system.',
@@ -31,6 +33,10 @@ const ERROR_MESSAGES: {
         mainMessage: 'Unfortunately, this NFT has already been claimed.',
         secondaryMessage: 'Try scanning another QR code or stay tuned for other opportunities to claim rare NFTs in the future!',
     },
+    INVALID_VOUCHER_CAMPAIGN_ID: {
+        mainMessage: 'This campaign does not exist in our system.',
+        secondaryMessage: 'Scan one of the QR codes around you to claim your NFT!',
+    },
     DEFAULT: {
         mainMessage: 'Something went wrong, please try again.',
     },
@@ -44,38 +50,8 @@ enum PROMO_VIEWS {
     SUCCESS = 'SUCCESS',
 }
 
-const getPromoViewByDateTime = (currentTime: number, startTime: number, endTime: number, promoView?: PROMO_VIEWS) => {
-    const isBeforeEventStart = currentTime < startTime;
-    const isAfterEventEnd = currentTime > endTime;
-    if (promoView === PROMO_VIEWS.SUCCESS) {
-        return PROMO_VIEWS.SUCCESS;
-    }
-    if (isBeforeEventStart) {
-        return PROMO_VIEWS.PRE_EVENT;
-    } else if (isAfterEventEnd) {
-        return PROMO_VIEWS.POST_EVENT;
-    } else {
-        return PROMO_VIEWS.ONGOING;
-    }
-}
-
+// todo: production dappid
 const portis = new Portis('05d421c3-24cc-4ba3-a606-a1a0215f4253', 'mainnet');
-
-const onResize = () => {
-    const vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
-const useOnResize = () => {
-    onResize()
-    window.addEventListener('resize', onResize);
-    return () => {
-        window.removeEventListener('resize', onResize);
-    };
-}
-
-const onCreateWalletClick = () => {
-    window.open('https://wallet.portis.io/register', '_blank')
-}
 
 interface INoticeViewProps {
     isSuccess?: boolean,
@@ -109,45 +85,74 @@ const BlauPage = () => {
     const [isClaimPending, setIsClaimPending] = useState<boolean>(false);
     const {query: {campaignId, voucherId}} = useRouter();
 
+    /**
+     * Verifies that a valid campaign id has been supplied as a query parameter
+     * Requests info on the campaign and stores start and end times for the landing page to switch views on
+     * */
     useEffect(() => {
         if (campaignId) {
-            portis.getCampaignInfo(Array.isArray(campaignId) ? campaignId[0] : campaignId).then(({result}) => {
-                setCampaignStartTime(+new Date((result as any).campaignDateStart));
-                setCampaignEndTime(+new Date((result as any).campaignDateEnd));
+            portis.getCampaignInfo(Array.isArray(campaignId) ? campaignId[0] : campaignId).then(({result, error}) => {
+                if (error) {
+                    setClaimError((error as any).code);
+                } else {
+                    setCampaignStartTime(+new Date((result as any).campaignDateStart));
+                    setCampaignEndTime(+new Date((result as any).campaignDateEnd));
+                }
             });
+            setClaimError("");
+        } else {
+            setClaimError("INVALID_VOUCHER_CAMPAIGN_ID");
         }
     }, [campaignId]);
 
+    /**
+     * Verifies that a valid voucher id has been supplied as a query parameter
+     * */
+    useEffect(() => {
+        if (!voucherId) {
+            setClaimError("VOUCHER_ID_REQUIRED");
+        } else {
+            setClaimError("");
+        }
+    }, [voucherId]);
+
+    /**
+     *  Handler for users claiming a voucher on the ONGOING campaign view
+     *  displays a loading spinner on the ONGOING campaign view
+     *  switches to the SUCCESS or ERROR view once the claim has been executed
+     * */
     const claimVoucher = async () => {
         setIsClaimPending(true);
         const {error} = await portis.claimVoucher(Array.isArray(voucherId) ? voucherId[0] : voucherId);
         if (error) {
-            setClaimError(typeof error === 'string' ? error : (error as any).code);
+            setClaimError((error as any).code);
         } else {
             setPromoView(PROMO_VIEWS.SUCCESS);
         }
     };
 
-    useEffect(useOnResize, []);
-
+    /**
+     * Every second, check to see if the campaign has begun or ended and update the view accordingly
+     * */
     useInterval(() => {
         if (campaignStartTime && campaignEndTime) {
-            const currentTime = +(new Date());
-            const nextPromoView = getPromoViewByDateTime(currentTime, campaignStartTime, campaignEndTime, promoView);
-            if (promoView !== nextPromoView) {
-                setPromoView(nextPromoView);
+            const currentTime = Date.now();
+            const nextPromoView = promoView === PROMO_VIEWS.SUCCESS ? promoView :
+                getPromoViewByDateTime(currentTime, campaignStartTime, campaignEndTime);
+            if (promoView !== nextPromoView) { // todo - needed?
+                    setPromoView(nextPromoView);
             }
         }
     }, 1000);
 
+    useEffect(useOnResize, []);
+
     const PromoView = () => {
         if (claimError) {
-            return <NoticeView {...ERROR_MESSAGES[claimError]} />
-        }
-        if (promoView === PROMO_VIEWS.SUCCESS) {
+            return <NoticeView {...(ERROR_MESSAGES[claimError] || ERROR_MESSAGES.DEFAULT)} />
+        } else if (promoView === PROMO_VIEWS.SUCCESS) {
             return <SuccessView/>
-        }
-        if (promoView === PROMO_VIEWS.ONGOING) {
+        } else if (promoView === PROMO_VIEWS.ONGOING) {
             const claimButton = isClaimPending
                 ? <div className="blau-spinner"/>
                 : (
@@ -163,9 +168,7 @@ const BlauPage = () => {
                     {claimButton}
                 </>
             );
-        }
-
-        if (promoView === PROMO_VIEWS.POST_EVENT) {
+        } else if (promoView === PROMO_VIEWS.POST_EVENT) {
             return (
                 <>
                     <p className="promo-text font-black">This event has ended.</p>
@@ -175,9 +178,7 @@ const BlauPage = () => {
                     </button>
                 </>
             );
-        }
-
-        if (promoView === PROMO_VIEWS.PRE_EVENT) {
+        } else if (promoView === PROMO_VIEWS.PRE_EVENT) {
             return (
                 <div>
                     <p className="promo-date">06.04.21</p>
@@ -190,12 +191,10 @@ const BlauPage = () => {
                     </a>
                 </div>
             );
+        } else {
+            return <div className="blau-spinner"/>
         }
-        ;
-
-        return <div className="blau-spinner"/>
     }
-
 
     return (
         <>
@@ -220,7 +219,25 @@ const BlauPage = () => {
     );
 };
 
-export default BlauPage;
+const onCreateWalletClick = () => {
+    window.open('https://wallet.portis.io/register', '_blank')
+}
+
+/*******************************************************************************************************
+ * Utilities *******************************************************************************************
+ *******************************************************************************************************/
+const getPromoViewByDateTime = (currentTime: number, startTime: number, endTime: number) => {
+    const isBeforeEventStart = currentTime < startTime;
+    const isAfterEventEnd = currentTime > endTime;
+
+    if (isBeforeEventStart) {
+        return PROMO_VIEWS.PRE_EVENT;
+    } else if (isAfterEventEnd) {
+        return PROMO_VIEWS.POST_EVENT;
+    } else {
+        return PROMO_VIEWS.ONGOING;
+    }
+}
 
 const useInterval = (callback: any, delay: number) => {
     const savedCallback = useRef(() => {
@@ -243,3 +260,17 @@ const useInterval = (callback: any, delay: number) => {
         }
     }, [delay]);
 }
+
+const onResize = () => {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+const useOnResize = () => {
+    onResize()
+    window.addEventListener('resize', onResize);
+    return () => {
+        window.removeEventListener('resize', onResize);
+    };
+}
+
+export default BlauPage;
