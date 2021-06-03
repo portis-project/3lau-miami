@@ -58,8 +58,7 @@ enum PROMO_VIEWS {
     SUCCESS = 'SUCCESS',
 }
 
-// todo: production dappid
-const portis = new Portis('05d421c3-24cc-4ba3-a606-a1a0215f4253', 'mainnet');
+const portis = new Portis('443771ae-a78e-47aa-8e58-ee982f807c22', 'mainnet');
 
 interface INoticeViewProps {
     isSuccess?: boolean,
