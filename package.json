@@ -18,7 +18,10 @@
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
     "typescript": "^4.1.2",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "@types/classnames": "^2.3.1",
+    "@zeit/next-css": "^1.0.1",
+    "next": "^10.2.3"
   },
   "scripts": {
     "dev": "next dev",
@@ -42,10 +45,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@types/classnames": "^2.3.1",
-    "@zeit/next-css": "^1.0.1",
-    "next": "^10.2.3"
   }
 }
