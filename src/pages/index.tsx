@@ -1,11 +1,9 @@
 import './style.css';
 import Head from 'next/head';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Portis from '@portis/web3';
 import cx from 'classnames'
-
-import { useInterval } from '../../utils/3lau-miami';
 
 const ERROR_MESSAGES = {
     VOUCHER_ID_REQUIRED: {
@@ -212,3 +210,23 @@ const BlauPage = () => {
 };
 
 export default BlauPage;
+
+const useInterval = (callback, delay) => {
+    const savedCallback = useRef(() => {});
+
+    // Remember the latest callback.
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
+
+    // Set up the interval.
+    useEffect(() => {
+        function tick() {
+            savedCallback.current();
+        }
+        if (delay !== null) {
+            let id = setInterval(tick, delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
+}
